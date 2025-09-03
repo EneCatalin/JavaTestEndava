@@ -2,11 +2,15 @@ package com.example.carins.service;
 
 import com.example.carins.exception.policy.PolicyEndDateException;
 import com.example.carins.model.Car;
+import com.example.carins.model.Claim;
 import com.example.carins.model.InsurancePolicy;
 import com.example.carins.repo.CarRepository;
+import com.example.carins.repo.ClaimRepository;
 import com.example.carins.repo.InsurancePolicyRepository;
-import com.example.carins.web.dto.CarDto;
+import com.example.carins.web.dto.ClaimDto;
+import com.example.carins.web.dto.CreateClaimRequest;
 import com.example.carins.web.dto.PolicyResponse;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,10 +23,13 @@ public class CarService {
 
     private final CarRepository carRepository;
     private final InsurancePolicyRepository policyRepository;
+    private final ClaimRepository claimRepository;
 
-    public CarService(CarRepository carRepository, InsurancePolicyRepository policyRepository) {
+    public CarService(CarRepository carRepository, InsurancePolicyRepository policyRepository, ClaimRepository claimRepository) {
         this.carRepository = carRepository;
         this.policyRepository = policyRepository;
+        this.claimRepository = claimRepository;
+
     }
 
     public List<Car> listCars() {
@@ -67,18 +74,20 @@ public class CarService {
         return toPolicyResponse(saved);
     }
 
+    @Transactional
+    public ClaimDto registerClaim(Long carId, CreateClaimRequest req) {
+        Car car = carRepository.findById(carId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Car not found"));
 
-    private CarDto toDto(Car c) {
-        var o = c.getOwner();
-        return new CarDto(
-                c.getId(),
-                c.getVin(),
-                c.getMake(),
-                c.getModel(),
-                c.getYearOfManufacture(),
-                (o != null ? o.getId() : null),
-                (o != null ? o.getName() : null),
-                (o != null ? o.getEmail() : null)
+        Claim claim = new Claim(car, req.claimDate(), req.description(), req.amount());
+        Claim saved = claimRepository.save(claim);
+
+        return new ClaimDto(
+                saved.getId(),
+                saved.getCar().getId(),
+                saved.getClaimDate(),
+                saved.getDescription(),
+                saved.getAmount()
         );
     }
 
