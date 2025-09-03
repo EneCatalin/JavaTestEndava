@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record PolicyUpsertRequest(
-        String provider,                  // optional per current spec
-        @NotNull LocalDate startDate,
-        @NotNull LocalDate endDate
+        String provider,
+        @NotNull(message="startDate is required") LocalDate startDate,
+        @NotNull(message="endDate is required")  LocalDate endDate
 ) { }

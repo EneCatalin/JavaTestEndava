@@ -17,12 +17,16 @@ public class InsurancePolicy {
     private Car car;
 
     private String provider;
+
+    //assuming this should also be required
+    @NotNull
+    @Column(nullable = false)
     private LocalDate startDate;
 
-    @NotNull                           // <-- API/JPA validation
-    @Column(name = "end_date", nullable = false) // <-- DB column NOT NULL via Hibernate DDL
+    @NotNull
+    @Column(nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate endDate; // nullable == open-ended
+    private LocalDate endDate;
 
     public InsurancePolicy() {}
     public InsurancePolicy(Car car, String provider, LocalDate startDate, LocalDate endDate) {

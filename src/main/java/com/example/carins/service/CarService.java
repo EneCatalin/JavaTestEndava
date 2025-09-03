@@ -1,5 +1,6 @@
 package com.example.carins.service;
 
+import com.example.carins.exception.policy.PolicyEndDateException;
 import com.example.carins.model.Car;
 import com.example.carins.model.InsurancePolicy;
 import com.example.carins.repo.CarRepository;
@@ -66,7 +67,6 @@ public class CarService {
         return toPolicyResponse(saved);
     }
 
-    // ------ Mapping lives here (service layer) ------
 
     private CarDto toDto(Car c) {
         var o = c.getOwner();
@@ -95,10 +95,10 @@ public class CarService {
     // ------ Validation helpers ------
 
     private static void validateDates(LocalDate start, LocalDate end) {
-        if (start == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate is required");
-        if (end == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate is required");
+        if (start == null) throw new PolicyEndDateException("startDate is required");
+        if (end == null) throw new PolicyEndDateException("endDate is required");
         if (end.isBefore(start)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate must be on/after startDate");
+            throw new PolicyEndDateException("endDate must be on or after startDate");
         }
     }
 }
