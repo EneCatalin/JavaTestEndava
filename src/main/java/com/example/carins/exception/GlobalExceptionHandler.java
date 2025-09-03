@@ -37,7 +37,14 @@ public class GlobalExceptionHandler {
                 ex.status().value(), rootCauseMessage(ex), ex);
         return build(ex.status(), "Request failed", ex, req, null);
     }
-
+    
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+                                                       HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Invalid date format, expected YYYY-MM-DD",
+                ex, req, null);
+    }
     // ---- ResponseStatusException (if any remain) ----
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiError> handleResponseStatus(ResponseStatusException ex, HttpServletRequest req) {

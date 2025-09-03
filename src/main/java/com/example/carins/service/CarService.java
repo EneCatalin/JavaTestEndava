@@ -1,5 +1,6 @@
 package com.example.carins.service;
 
+import com.example.carins.exception.InvalidDateException;
 import com.example.carins.exception.ResourceNotFoundException;
 import com.example.carins.exception.policy.PolicyEndDateException;
 import com.example.carins.model.Car;
@@ -12,11 +13,10 @@ import com.example.carins.web.dto.ClaimDto;
 import com.example.carins.web.dto.CreateClaimRequest;
 import com.example.carins.web.dto.PolicyResponse;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -38,11 +38,23 @@ public class CarService {
     }
 
     public boolean isInsuranceValid(Long carId, LocalDate date) {
-        if (carId == null || date == null) return false;
-        // TODO: optionally throw NotFound if car does not exist
+        int y = date.getYear();
+        if (y < 1900 || y > 2100) {
+            throw new InvalidDateException("Date out of supported range (1900–2100): " + date);
+        }
+        if (!carRepository.existsById(carId)) {
+            throw new ResourceNotFoundException("Car " + carId + " not found");
+        }
         return policyRepository.existsActiveOnDate(carId, date);
     }
 
+    private LocalDate parseDate(String input) {
+        try {
+            return LocalDate.parse(input);
+        } catch (DateTimeParseException ex) {
+            throw new InvalidDateException("Invalid date format, expected YYYY-MM-DD: " + input, ex);
+        }
+    }
     //My code
 
     public PolicyResponse createPolicy(Long carId, LocalDate startDate, LocalDate endDate, String provider) {

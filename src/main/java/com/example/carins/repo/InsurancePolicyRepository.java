@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface InsurancePolicyRepository extends JpaRepository<InsurancePolicy, Long> {
 
+    //TODO: check this query
     @Query("select case when count(p) > 0 then true else false end " +
            "from InsurancePolicy p " +
            "where p.car.id = :carId " +
