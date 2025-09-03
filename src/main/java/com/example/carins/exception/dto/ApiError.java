@@ -9,7 +9,6 @@ public record ApiError(
         String error,
         String message,
         String exception,
-        String rootCause,
         String path,
         List<FieldErrorDto> details
 ) {}

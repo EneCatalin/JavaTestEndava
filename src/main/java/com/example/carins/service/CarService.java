@@ -1,5 +1,6 @@
 package com.example.carins.service;
 
+import com.example.carins.exception.ResourceNotFoundException;
 import com.example.carins.exception.policy.PolicyEndDateException;
 import com.example.carins.model.Car;
 import com.example.carins.model.Claim;
@@ -47,8 +48,8 @@ public class CarService {
     public PolicyResponse createPolicy(Long carId, LocalDate startDate, LocalDate endDate, String provider) {
         validateDates(startDate, endDate);
 
-        Car car = carRepository.findById(carId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "carId not found"));
+        Car car = carRepository.findById(carId)
+                .orElseThrow(() -> new ResourceNotFoundException("Car not found"));
 
         InsurancePolicy p = new InsurancePolicy();
         p.setCar(car);
@@ -63,8 +64,8 @@ public class CarService {
     public PolicyResponse updatePolicy(Long policyId, LocalDate startDate, LocalDate endDate, String provider) {
         validateDates(startDate, endDate);
 
-        InsurancePolicy existing = policyRepository.findById(policyId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "policyId not found"));
+        InsurancePolicy existing = policyRepository.findById(policyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Policy not found"));
 
         existing.setProvider(provider);
         existing.setStartDate(startDate);
@@ -77,7 +78,7 @@ public class CarService {
     @Transactional
     public ClaimDto registerClaim(Long carId, CreateClaimRequest req) {
         Car car = carRepository.findById(carId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Car not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Car not found"));
 
         Claim claim = new Claim(car, req.claimDate(), req.description(), req.amount());
         Claim saved = claimRepository.save(claim);
@@ -106,8 +107,6 @@ public class CarService {
     private static void validateDates(LocalDate start, LocalDate end) {
         if (start == null) throw new PolicyEndDateException("startDate is required");
         if (end == null) throw new PolicyEndDateException("endDate is required");
-        if (end.isBefore(start)) {
-            throw new PolicyEndDateException("endDate must be on or after startDate");
-        }
+        if (end.isBefore(start)) throw new PolicyEndDateException("endDate must be on or after startDate");
     }
 }

@@ -1,11 +1,10 @@
 package com.example.carins.exception.policy;
 
-public class PolicyEndDateException extends PolicyOperationException{
-    public PolicyEndDateException(String message) {
-        super(message);
-    }
+import com.example.carins.exception.ApiException;
+import org.springframework.http.HttpStatus;
 
-    public PolicyEndDateException(String message, Throwable cause) {
-        super(message, cause);
+public class PolicyEndDateException extends ApiException {
+    public PolicyEndDateException(String message) {
+        super(HttpStatus.UNPROCESSABLE_ENTITY, message); // 422 is great for validation
     }
 }
