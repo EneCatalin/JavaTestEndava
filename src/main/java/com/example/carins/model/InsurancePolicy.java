@@ -1,6 +1,10 @@
 package com.example.carins.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 
 @Entity
@@ -14,11 +18,20 @@ public class InsurancePolicy {
 
     private String provider;
     private LocalDate startDate;
+
+    @NotNull                           // <-- API/JPA validation
+    @Column(name = "end_date", nullable = false) // <-- DB column NOT NULL via Hibernate DDL
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate; // nullable == open-ended
 
     public InsurancePolicy() {}
     public InsurancePolicy(Car car, String provider, LocalDate startDate, LocalDate endDate) {
         this.car = car; this.provider = provider; this.startDate = startDate; this.endDate = endDate;
+    }
+
+    @AssertTrue(message = "endDate must be on or after startDate")
+    private boolean isDateRangeValid() {
+        return startDate != null && endDate != null && !endDate.isBefore(startDate);
     }
 
     public Long getId() { return id; }

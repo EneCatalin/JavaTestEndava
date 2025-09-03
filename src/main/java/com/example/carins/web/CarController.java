@@ -1,11 +1,16 @@
 package com.example.carins.web;
 
 import com.example.carins.model.Car;
+import com.example.carins.model.InsurancePolicy;
 import com.example.carins.service.CarService;
 import com.example.carins.web.dto.CarDto;
+import com.example.carins.web.dto.PolicyResponse;
+import com.example.carins.web.dto.PolicyUpsertRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,4 +46,19 @@ public class CarController {
     }
 
     public record InsuranceValidityResponse(Long carId, String date, boolean valid) {}
+
+    //My code
+
+    @PostMapping("/cars/{carId}/policies")
+    public ResponseEntity<PolicyResponse> createPolicy(@PathVariable Long carId,
+                                                       @Valid @RequestBody PolicyUpsertRequest req) {
+        PolicyResponse saved = service.createPolicy(carId, req.startDate(), req.endDate(), req.provider());
+        return ResponseEntity.created(URI.create("/api/policies/" + saved.id())).body(saved);
+    }
+
+    @PutMapping("/policies/{policyId}")
+    public PolicyResponse updatePolicy(@PathVariable Long policyId,
+                                       @Valid @RequestBody PolicyUpsertRequest req) {
+        return service.updatePolicy(policyId, req.startDate(), req.endDate(), req.provider());
+    }
 }
