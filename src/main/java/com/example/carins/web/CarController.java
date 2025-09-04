@@ -44,8 +44,6 @@ public class CarController {
     }
 
 
-    //My code
-
     @PostMapping("/cars/{carId}/policies")
     public ResponseEntity<PolicyResponse> createPolicy(@PathVariable Long carId,
                                                        @Valid @RequestBody PolicyUpsertRequest req) {

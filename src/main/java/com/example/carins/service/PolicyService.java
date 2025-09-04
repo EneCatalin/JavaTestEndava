@@ -16,7 +16,6 @@ public class PolicyService {
         this.policyRepo = policyRepo;
     }
 
-    /** Return all policies as DTOs (controller stays thin). */
     public List<PolicyResponse> listAll() {
         return policyRepo.findAll()
                 .stream()

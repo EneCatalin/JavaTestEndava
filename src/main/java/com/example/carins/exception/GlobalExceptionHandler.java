@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -127,12 +126,6 @@ public class GlobalExceptionHandler {
                 .toList();
         return build(HttpStatus.BAD_REQUEST, "Validation failed", ex, req, details);
     }
-
-    //? this can be edited back in, just remember to edit the properties file after
-//    @ExceptionHandler(org.springframework.web.servlet.NoHandlerFoundException.class)
-//    public ResponseEntity<ApiError> handleNoHandler(NoHandlerFoundException ex, HttpServletRequest req) {
-//        return build(HttpStatus.NOT_FOUND, "No handler for " + ex.getHttpMethod() + " " + ex.getRequestURL(), ex, req, null);
-//    }
 
     // ---- Fallback ----
     @ExceptionHandler(Exception.class)

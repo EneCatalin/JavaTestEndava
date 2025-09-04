@@ -60,7 +60,6 @@ public class CarService {
             throw new InvalidDateException("Invalid date format, expected YYYY-MM-DD: " + input, ex);
         }
     }
-    //My code
 
     public PolicyResponse createPolicy(Long carId, LocalDate startDate, LocalDate endDate, String provider) {
         validateDates(startDate, endDate);

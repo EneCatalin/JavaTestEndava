@@ -207,4 +207,74 @@ class CarControllerTests {
         verifyNoMoreInteractions(service);
     }
 
+
+    @Test
+    void insuranceValid_nonExistingCar_returns404() throws Exception {
+        long missingId = 21L;
+        String date = "2025-06-01";
+
+        when(service.parseDate(date)).thenReturn(LocalDate.of(2025, 6, 1));
+        when(service.isInsuranceValid(eq(missingId), any(LocalDate.class)))
+                .thenThrow(new com.example.carins.exception.ResourceNotFoundException("Car " + missingId + " not found"));
+
+        mvc.perform(get("/api/cars/{carId}/insurance-valid", missingId)
+                        .param("date", date))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Request failed"))
+                .andExpect(jsonPath("$.path").value("/api/cars/" + missingId + "/insurance-valid"));
+
+        verify(service).parseDate(date);
+        verify(service).isInsuranceValid(eq(missingId), any(LocalDate.class));
+        verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    void insuranceValid_invalidDateFormat_returns400() throws Exception {
+        long carId = 1L;
+        String badDate = "not-a-date";
+
+        when(service.parseDate(badDate))
+                .thenThrow(new com.example.carins.exception.InvalidDateException(
+                        "Invalid date format, expected YYYY-MM-DD: " + badDate));
+
+        mvc.perform(get("/api/cars/{carId}/insurance-valid", carId)
+                        .param("date", badDate))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Request failed"))
+                .andExpect(jsonPath("$.exception")
+                        .value("com.example.carins.exception.InvalidDateException"))
+                .andExpect(jsonPath("$.path").value("/api/cars/" + carId + "/insurance-valid"));
+
+        verify(service).parseDate(badDate);
+        verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    void insuranceValid_impossibleDate_returns400() throws Exception {
+        long carId = 1L;
+        LocalDate impossible = LocalDate.of(2125, 6, 1);
+        String dateStr = "2125-06-01";
+
+        when(service.parseDate(dateStr)).thenReturn(impossible);
+        when(service.isInsuranceValid(eq(carId), eq(impossible)))
+                .thenThrow(new com.example.carins.exception.InvalidDateException(
+                        "Date out of supported range (1900–2100): " + dateStr));
+
+        mvc.perform(get("/api/cars/{carId}/insurance-valid", carId)
+                        .param("date", dateStr))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Request failed"))
+                .andExpect(jsonPath("$.exception")
+                        .value("com.example.carins.exception.InvalidDateException"))
+                .andExpect(jsonPath("$.path").value("/api/cars/" + carId + "/insurance-valid"));
+
+        verify(service).parseDate(dateStr);
+        verify(service).isInsuranceValid(eq(carId), eq(impossible));
+        verifyNoMoreInteractions(service);
+    }
+
 }
