@@ -1,4 +1,5 @@
 # Car Insurance Project
+## <span style="color:yellow">Added my postman collection in resources</span>
 
 ## 1) Requirements (Software)
 
