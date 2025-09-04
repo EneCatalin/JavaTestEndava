@@ -18,6 +18,10 @@ public class InsurancePolicy {
 
     private String provider;
 
+    //TODO look over this tomorrow
+    //had to add it for chron job
+    @Column(nullable = false)
+    private boolean expiryLogged = false;
     //assuming this should also be required
     @NotNull
     @Column(nullable = false)
@@ -47,4 +51,6 @@ public class InsurancePolicy {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public boolean isExpiryLogged() { return expiryLogged; }
+    public void setExpiryLogged(boolean expiryLogged) { this.expiryLogged = expiryLogged; }
 }
