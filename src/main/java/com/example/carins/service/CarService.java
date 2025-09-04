@@ -48,7 +48,7 @@ public class CarService {
         return policyRepository.existsActiveOnDate(carId, date);
     }
 
-    private LocalDate parseDate(String input) {
+    public LocalDate parseDate(String input) {
         try {
             return LocalDate.parse(input);
         } catch (DateTimeParseException ex) {

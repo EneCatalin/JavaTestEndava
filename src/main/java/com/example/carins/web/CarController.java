@@ -40,7 +40,9 @@ public class CarController {
             @PathVariable Long carId,
             @RequestParam String date) {
 
-        boolean valid = service.isInsuranceValid(carId, LocalDate.parse(date));
+        LocalDate parsedDate = service.parseDate(date);
+        boolean valid = service.isInsuranceValid(carId, parsedDate);
+
         return ResponseEntity.ok(new InsuranceValidityResponse(carId, date, valid));
     }
 

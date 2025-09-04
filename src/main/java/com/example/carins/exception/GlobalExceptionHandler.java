@@ -13,16 +13,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
+
 
 
 @RestControllerAdvice
@@ -30,21 +35,20 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // ---- Domain exceptions (Option A) ----
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiError> handleApi(ApiException ex, HttpServletRequest req) {
-        // log full root cause, return clean body
         log.warn("API error at {} {} -> {}: {}", req.getMethod(), req.getRequestURI(),
                 ex.status().value(), rootCauseMessage(ex), ex);
         return build(ex.status(), "Request failed", ex, req, null);
     }
 
-    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
-                                                       HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST,
-                "Invalid date format, expected YYYY-MM-DD",
-                ex, req, null);
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
+        String target = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "value";
+        String msg = ex.getName().equals("date")
+                ? "Invalid date format, expected YYYY-MM-DD"
+                : "Invalid value for parameter '" + ex.getName() + "' (expected " + target + ")";
+        return build(HttpStatus.BAD_REQUEST, msg, ex, req, null);
     }
     // ---- ResponseStatusException (if any remain) ----
     @ExceptionHandler(ResponseStatusException.class)
@@ -67,7 +71,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Validation failed", ex, req, details);
     }
 
-    // ---- Bean Validation outside controller args ----
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex,
                                                               HttpServletRequest req) {
@@ -79,7 +82,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Validation failed", ex, req, details);
     }
 
-    // ---- Malformed JSON / type mismatches ----
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleNotReadable(HttpMessageNotReadableException ex,
                                                       HttpServletRequest req) {
@@ -111,6 +113,27 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed", ex, req, null);
     }
 
+    // ---- Common Spring Errors ----
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex, HttpServletRequest req) {
+        String msg = "Missing required parameter '" + ex.getParameterName() + "'";
+        return build(HttpStatus.BAD_REQUEST, msg, ex, req, null);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiError> handleBind(BindException ex, HttpServletRequest req) {
+        var details = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new FieldErrorDto(fe.getField(), fe.getDefaultMessage()))
+                .toList();
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", ex, req, details);
+    }
+
+    //? this can be edited back in, just remember to edit the properties file after
+//    @ExceptionHandler(org.springframework.web.servlet.NoHandlerFoundException.class)
+//    public ResponseEntity<ApiError> handleNoHandler(NoHandlerFoundException ex, HttpServletRequest req) {
+//        return build(HttpStatus.NOT_FOUND, "No handler for " + ex.getHttpMethod() + " " + ex.getRequestURL(), ex, req, null);
+//    }
+
     // ---- Fallback ----
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest req) {
@@ -118,7 +141,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error", ex, req, null);
     }
 
-    // ---------- helpers ----------
     private ResponseEntity<ApiError> build(HttpStatus status,
                                            String message,
                                            Exception ex,
