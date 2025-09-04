@@ -1,6 +1,5 @@
 package com.example.carins.web;
 
-import com.example.carins.service.CarHistoryService;
 import com.example.carins.service.CarService;
 import com.example.carins.web.dto.*;
 import com.example.carins.web.mapper.CarMapper;
@@ -18,12 +17,10 @@ import java.util.List;
 public class CarController {
 
     private final CarService service;
-    private final CarHistoryService historyService;
     private final CarMapper carMapper;
 
-    public CarController(CarService service, CarHistoryService historyService, CarMapper carMapper) {
+    public CarController(CarService service, CarMapper carMapper) {
         this.service = service;
-        this.historyService = historyService;
         this.carMapper = carMapper;
     }
 
@@ -80,7 +77,7 @@ public class CarController {
 
     @GetMapping("/cars/{carId}/history")
     public ResponseEntity<List<HistoryEventDto>> getHistory(@PathVariable Long carId) {
-        var events = historyService.getHistory(carId);
+        var events = service.getHistory(carId);
         return ResponseEntity.ok(events);
     }
 }

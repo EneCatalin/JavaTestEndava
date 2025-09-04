@@ -1,7 +1,6 @@
 package com.example.carins.web;
 
 import com.example.carins.exception.GlobalExceptionHandler;
-import com.example.carins.service.CarHistoryService;
 import com.example.carins.service.CarService;
 import com.example.carins.web.dto.ClaimDto;
 import com.example.carins.web.dto.CreateClaimRequest;
@@ -25,6 +24,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.endsWith;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 class CarControllerTests {
 
@@ -34,10 +35,9 @@ class CarControllerTests {
     @BeforeEach
     void setUp() {
         service = mock(CarService.class);
-        CarHistoryService historyService = mock(CarHistoryService.class);
         CarMapper carMapper = mock(CarMapper.class);
 
-        CarController controller = new CarController(service, historyService, carMapper);
+        CarController controller = new CarController(service, carMapper);
 
         ObjectMapper om = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
@@ -149,4 +149,62 @@ class CarControllerTests {
         verify(service).registerClaim(eq(carId), eq(request));
         verifyNoMoreInteractions(service);
     }
+
+    @Test
+    void createClaim_carNotFound_returns404_withErrorDetails() throws Exception {
+        long carId = 999L; // non-existent car
+        String body = """
+      {
+        "claimDate": "2025-09-01",
+        "description": "Minor accident",
+        "amount": 1200.50
+      }
+    """;
+
+        when(service.registerClaim(eq(carId), any(CreateClaimRequest.class)))
+                .thenThrow(new com.example.carins.exception.ResourceNotFoundException("Car not found"));
+
+        mvc.perform(post("/api/cars/{carId}/claims", carId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Request failed"))
+                .andExpect(jsonPath("$.exception")
+                        .value("com.example.carins.exception.ResourceNotFoundException"))
+                .andExpect(jsonPath("$.path", endsWith("/api/cars/" + carId + "/claims")));
+
+        verify(service).registerClaim(eq(carId), any(CreateClaimRequest.class));
+        verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    void insuranceValid_returnsTrueForActivePolicy() throws Exception {
+        // carId=1 has Allianz policy valid until 2024-12-31 (see import.sql)
+        mvc.perform(get("/api/cars/1/insurance-valid")
+                        .param("date", "2024-06-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.carId").value(1))
+                .andExpect(jsonPath("$.date").value("2024-06-01"))
+                .andExpect(jsonPath("$.valid").value(false));
+    }
+
+    @Test
+    void history_nonExistingCar_returns404() throws Exception {
+        long missingId = 21L;
+
+        when(service.getHistory(missingId))
+                .thenThrow(new com.example.carins.exception.ResourceNotFoundException("Car " + missingId + " not found"));
+
+        mvc.perform(get("/api/cars/{carId}/history", missingId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Request failed"))
+                .andExpect(jsonPath("$.path").value("/api/cars/" + missingId + "/history"));
+
+        verify(service).getHistory(missingId);
+        verifyNoMoreInteractions(service);
+    }
+
 }
