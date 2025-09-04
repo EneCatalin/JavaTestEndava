@@ -46,7 +46,6 @@ public class CarController {
         return ResponseEntity.ok(new InsuranceValidityResponse(carId, date, valid));
     }
 
-    public record InsuranceValidityResponse(Long carId, String date, boolean valid) {}
 
     //My code
 
